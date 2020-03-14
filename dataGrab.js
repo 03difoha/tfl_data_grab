@@ -3,19 +3,19 @@ require("dotenv").config();
 const request = require("request");
 var mysql = require("mysql");
 
-var con = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DATABASE
-});
-
-con.connect(function(err) {
-  if (err) throw err;
-  console.log("Connected!");
-});
-
 function saveToDb(body) {
+  var con = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DATABASE
+  });
+
+  con.connect(function(err) {
+    if (err) throw err;
+    console.log("Connected!");
+  });
+
   for (i of body) {
     console.log(i);
     if (!i.name) {
@@ -48,28 +48,22 @@ function saveToDb(body) {
       console.log("record inserted");
     });
   }
+
+  con.end();
 }
 
-function refreshData() {
-  x = 900; // 900 seconds = 15 minutes
-
-  request(
-    `https://api.tfl.gov.uk/Occupancy/CarPark?app_id=${process.env.TFL_API_ID}&app_key=${process.env.TFL_API_KEY}`,
-    {
-      json: true
-    },
-    (err, res, body) => {
-      if (err) {
-        return console.log(err);
-      }
-      if (body == String) {
-        return body;
-      }
-      saveToDb(body);
+request(
+  `https://api.tfl.gov.uk/Occupancy/CarPark?app_id=${process.env.TFL_API_ID}&app_key=${process.env.TFL_API_KEY}`,
+  {
+    json: true
+  },
+  (err, res, body) => {
+    if (err) {
+      return console.log(err);
     }
-  );
-
-  setTimeout(refreshData, x * 1000);
-}
-
-refreshData();
+    if (body == String) {
+      return body;
+    }
+    saveToDb(body);
+  }
+);
